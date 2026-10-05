@@ -94,7 +94,7 @@ server <- function(input, output) {
       plot_data$RSI <- as.numeric(RSI(Cl(filtered_data), n = 14))
     }
 
-    if (number_of_rows >= 26) {
+    if (number_of_rows >= 34) {
       macd_values <- MACD(Cl(filtered_data), nFast = 12, nSlow = 26, nSig = 9)
       plot_data$MACD <- as.numeric(macd_values[, 1])
     }
@@ -140,7 +140,7 @@ server <- function(input, output) {
       p <- p + geom_line(aes(y = RSI, linetype = "RSI"), na.rm = TRUE)
     }
 
-    if ("MACD" %in% input$technical_indicators && number_of_rows >= 26) {
+    if ("MACD" %in% input$technical_indicators && number_of_rows >= 34) {
       p <- p + geom_line(aes(y = MACD, linetype = "MACD"), na.rm = TRUE)
     }
 
