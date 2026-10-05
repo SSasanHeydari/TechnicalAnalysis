@@ -42,6 +42,13 @@ ui <- fluidPage(
         "time_frame",
         "Select Time Frame:",
         choices = c("Daily", "Weekly", "Monthly")
+      ),
+
+      # Step 3: Select technical indicators to overlay
+      checkboxGroupInput(
+        "technical_indicators",
+        "Technical Indicators:",
+        choices = c("Moving Averages", "RSI", "MACD")
       )
     ),
     
@@ -74,6 +81,14 @@ server <- function(input, output) {
       Date = index(filtered_data),
       Close = as.numeric(Cl(filtered_data))
     )
+
+    # Step 3: Calculate technical indicators
+    plot_data$MA20 <- as.numeric(SMA(Cl(filtered_data), n = 20))
+    plot_data$MA50 <- as.numeric(SMA(Cl(filtered_data), n = 50))
+    plot_data$RSI <- as.numeric(RSI(Cl(filtered_data), n = 14))
+
+    macd_values <- MACD(Cl(filtered_data), nFast = 12, nSlow = 26, nSig = 9)
+    plot_data$MACD <- as.numeric(macd_values[, 1])
     
     # Create stock price line chart
     p <- ggplot(plot_data, aes(x = Date, y = Close)) +
@@ -83,6 +98,23 @@ server <- function(input, output) {
         x = "Date",
         y = "Closing Price"
       )
+
+    # Add selected technical indicators as additional layers
+    if ("Moving Averages" %in% input$technical_indicators) {
+      p <- p +
+        geom_line(aes(y = MA20, linetype = "MA20")) +
+        geom_line(aes(y = MA50, linetype = "MA50"))
+    }
+
+    if ("RSI" %in% input$technical_indicators) {
+      p <- p +
+        geom_line(aes(y = RSI, linetype = "RSI"))
+    }
+
+    if ("MACD" %in% input$technical_indicators) {
+      p <- p +
+        geom_line(aes(y = MACD, linetype = "MACD"))
+    }
     
     print(p)
   })
