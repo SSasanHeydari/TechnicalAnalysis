@@ -21,5 +21,72 @@ stock_data <- getSymbols(
   auto.assign = FALSE
 )
 
-# Display the first rows of the data
-head(stock_data)
+# Step 2: Visualizing Stock Data
+
+# User interface
+ui <- fluidPage(
+  titlePanel("Portfolio Dashboard"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      dateRangeInput(
+        "date_range",
+        "Select Date Range:",
+        start = start_date,
+        end = end_date,
+        min = start_date,
+        max = end_date
+      ),
+      
+      selectInput(
+        "time_frame",
+        "Select Time Frame:",
+        choices = c("Daily", "Weekly", "Monthly")
+      )
+    ),
+    
+    mainPanel(
+      plotOutput("stock_chart")
+    )
+  )
+)
+
+# Server
+server <- function(input, output) {
+  
+  output$stock_chart <- renderPlot({
+    
+    # Filter data based on selected date range
+    filtered_data <- stock_data[
+      index(stock_data) >= input$date_range[1] &
+        index(stock_data) <= input$date_range[2]
+    ]
+    
+    # Convert data to the selected time frame
+    if (input$time_frame == "Weekly") {
+      filtered_data <- to.weekly(filtered_data, indexAt = "endof")
+    } else if (input$time_frame == "Monthly") {
+      filtered_data <- to.monthly(filtered_data, indexAt = "endof")
+    }
+    
+    # Prepare data for ggplot2
+    plot_data <- data.frame(
+      Date = index(filtered_data),
+      Close = as.numeric(Cl(filtered_data))
+    )
+    
+    # Create stock price line chart
+    p <- ggplot(plot_data, aes(x = Date, y = Close)) +
+      geom_line() +
+      labs(
+        title = paste(stock_symbol, "Stock Price"),
+        x = "Date",
+        y = "Closing Price"
+      )
+    
+    print(p)
+  })
+}
+
+# Run the Shiny application
+shinyApp(ui = ui, server = server)
