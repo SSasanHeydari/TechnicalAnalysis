@@ -89,6 +89,17 @@ server <- function(input, output) {
 
     macd_values <- MACD(Cl(filtered_data), nFast = 12, nSlow = 26, nSig = 9)
     plot_data$MACD <- as.numeric(macd_values[, 1])
+
+    # Step 4: Implement Moving Average trading rules
+    plot_data$Signal <- ifelse(
+      is.na(plot_data$MA20) | is.na(plot_data$MA50),
+      "Hold",
+      ifelse(
+        plot_data$MA20 > plot_data$MA50,
+        "Buy",
+        ifelse(plot_data$MA20 < plot_data$MA50, "Sell", "Hold")
+      )
+    )
     
     # Create stock price line chart
     p <- ggplot(plot_data, aes(x = Date, y = Close)) +
@@ -115,6 +126,14 @@ server <- function(input, output) {
       p <- p +
         geom_line(aes(y = MACD, linetype = "MACD"))
     }
+
+    # Annotate Buy, Sell, and Hold signals on the chart
+    p <- p +
+      geom_text(
+        aes(label = Signal),
+        vjust = 1.5,
+        check_overlap = TRUE
+      )
     
     print(p)
   })
